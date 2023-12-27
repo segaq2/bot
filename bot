@@ -1,0 +1,61 @@
+import asyncio
+import logging
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.filters import Command
+
+bot = Bot(token="6176106214:AAGcWkXAC9j-bHa1QvtgYpfC_Om8is2U_EM")
+
+logging.basicConfig(level=logging.INFO)
+
+dp = Dispatcher()
+
+# Переменная для хранения числа
+stored_number = 0
+
+# Обработчик команды /start
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    keyboard = InlineKeyboardMarkup()
+    buttons = [
+        InlineKeyboardButton(text="Увеличить на 1", callback_data='increment'),
+        InlineKeyboardButton(text="Уменьшить на 1", callback_data='decrement'),
+        InlineKeyboardButton(text="Умножить на 2", callback_data='multiply'),
+    ]
+    keyboard.add(*buttons)
+    await message.answer("Выберите операцию:", reply_markup=keyboard)
+
+# Обработчик инлайн-кнопок
+@dp.callback_query(lambda c: True)
+async def process_callback(callback_query: types.CallbackQuery):
+    global stored_number
+
+    # Определение операции в зависимости от нажатой кнопки
+    if callback_query.data == 'increment':
+        stored_number += 1
+    elif callback_query.data == 'decrement':
+        stored_number -= 1
+    elif callback_query.data == 'multiply':
+        stored_number *= 2
+
+    # Отправка результата и обновление клавиатуры
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    buttons = [
+        InlineKeyboardButton(text="Увеличить на 1", callback_data='increment'),
+        InlineKeyboardButton(text="Уменьшить на 1", callback_data='decrement'),
+        InlineKeyboardButton(text="Умножить на 2", callback_data='multiply'),
+    ]
+    keyboard.add(*buttons)
+    await bot.edit_message_text(
+        chat_id=callback_query.message.chat.id,
+        message_id=callback_query.message.message_id,
+        text=f"Текущее число: {stored_number}",
+        reply_markup=keyboard
+    )
+
+# Запуск процесса поллинга новых апдейтов
+async def main():
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())     
